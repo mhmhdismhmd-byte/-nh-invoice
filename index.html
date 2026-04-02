@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة عرض سعر - محلات النهاري</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+            font-size: 14px;
+        }
+        .invoice-container {
+            background-color: #fff;
+            width: 900px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        /* Header Section */
+        .header-box {
+            border: 2px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+        }
+        .shop-name { width: 38%; text-align: right; line-height: 1.4; }
+        .logo-section { width: 24%; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .header-info { width: 38%; text-align: left; line-height: 1.4; }
+        
+        .icon-wrapper {
+            position: relative;
+            width: 80px;
+            height: 60px;
+            margin-bottom: 5px;
+        }
+        .shape-eight {
+            position: absolute;
+            width: 48px;
+            height: 44px;
+            background: linear-gradient(135deg, #8ba3ba, #5e7995);
+            clip-path: polygon(50% 0%, 100% 100%, 82% 100%, 50% 30%, 18% 100%, 0% 100%);
+            left: 4px; bottom: 2px; z-index: 1;
+        }
+        .shape-angle {
+            position: absolute;
+            width: 50px;
+            height: 38px;
+            background: linear-gradient(135deg, #abbfd1, #7d96b1);
+            clip-path: polygon(0% 100%, 100% 100%, 100% 80%, 40% 80%, 90% 15%, 72% 0%, 0% 75%);
+            left: 22px; bottom: 2px; z-index: 2;
+        }
+        .lightning {
+            position: absolute;
+            width: 28px;
+            height: 52px;
+            background: #2c5e9e;
+            right: 6px; top: -4px;
+            clip-path: polygon(45% 0%, 100% 0%, 75% 45%, 100% 45%, 35% 100%, 55% 55%, 30% 55%);
+            z-index: 3;
+        }
+
+        .title-bar {
+            text-align: center; font-weight: bold; font-size: 18px;
+            margin: 10px 0; border-bottom: 2px solid #000; padding-bottom: 5px;
+        }
+        .meta-table {
+            width: 100%; border-collapse: collapse; margin-bottom: 10px;
+            background-color: #e9e9e9; border: 1px solid #000; 
+        }
+        .meta-table td { padding: 5px; border: none; }
+
+        input[type="text"], input[type="date"], input[type="number"] {
+            border: none; background: transparent; font-family: inherit;
+            font-size: inherit; width: 100%; outline: none; padding: 2px;
+        }
+        .meta-table input { width: 150px; border-bottom: 1px solid #ccc; }
+
+        .items-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .items-table th {
+            background-color: #f2f2f2; color: #b22222; border: 1px solid #000; padding: 8px;
+        }
+        .items-table td { border: 1px solid #000; padding: 0; position: relative; }
+        .items-table input { text-align: center; padding: 8px; }
+        .item-name-col { width: 35%; }
+        .item-name-col input { text-align: right; }
+
+        .btn-delete {
+            color: red; cursor: pointer; font-weight: bold; border: none; background: none;
+        }
+
+        .totals-section { margin-top: 10px; text-align: right; }
+        .total-box { display: inline-block; text-align: right; width: 300px; }
+        .total-row { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px dashed #ccc; }
+        
+        .amount-text {
+            margin-top: 10px; font-weight: bold; text-align: center; color: #2c5e9e;
+            border: 1px solid #ccc; padding: 5px; background: #f9f9f9;
+        }
+
+        .db-panel {
+            margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ccc;
+            width: 900px; margin: 10px auto; border-radius: 8px;
+        }
+
+        .footer-note {
+            margin-top: 30px; border-top: 2px dashed #000; padding-top: 10px;
+            text-align: center; font-weight: bold;
+        }
+
+        @media print {
+            body { background-color: #fff; padding: 0; }
+            .invoice-container { box-shadow: none; border: 1px solid #ccc; width: 100%; }
+            .no-print { display: none !important; }
+            .btn-delete { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="db-panel no-print">
+    <strong>قاعدة البيانات المحلية:</strong>
+    <button onclick="saveInvoice()" style="background: #28a745; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">حفظ الفاتورة الحالية</button>
+    <select id="savedInvoices" onchange="loadInvoice(this.value)" style="padding:5px; width: 200px;">
+        <option value="">-- فواتير محفوظة --</option>
+    </select>
+    <button onclick="deleteSavedInvoice()" style="background: #dc3545; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">حذف المختارة</button>
+</div>
+
+<div class="invoice-container" id="printableInvoice">
+    
+    <div class="header-box">
+        <div class="shop-name">
+            <h2 style="margin:0;">محلات النهاري</h2>
+            لبيع جميع انواع البطاريات<br>
+            والاطارات والزيوت ومنظومات الطاقه الشمسيه<br>
+            <strong>لصاحبها نجيب عبد الله عبده شرف النهاري</strong>
+        </div>
+
+        <div class="logo-section">
+            <div class="icon-wrapper">
+                <div class="shape-eight"></div>
+                <div class="shape-angle"></div>
+                <div class="lightning"></div>
+            </div>
+            <h2 style="margin:0; color:#2c5e9e; font-size: 22px;">ALNHARI</h2>
+            <small style="font-weight: bold;">For solar energy</small>
+        </div>
+
+        <div class="header-info">
+            المركز الرئيسي تعز - مقابل فرزة صنعاء<br>
+            ت 776034543 - 736115974 - 202788<br>
+            فرع الحوبان طريق عدن جوار أطباء بلا حدود<br>
+            ت 772929822 - 739502687 - 04/291070
+        </div>
+    </div>
+
+    <div class="title-bar">فـاتـورة عـرض سـعـر</div>
+
+    <table class="meta-table">
+        <tr>
+            <td><strong>رقم العرض:</strong> <input type="text" id="inv_no" value="2237"></td>
+            <td><strong>التاريخ:</strong> <input type="text" id="inv_date" value="2026/03/27"></td>
+            <td><strong>العملة:</strong> <input type="text" id="inv_currency" value="دولار أمريكي"></td>
+        </tr>
+        <tr>
+            <td><strong>اسم العميل:</strong> <input type="text" id="cust_name" placeholder="أدخل اسم العميل هنا" style="width: 250px;"></td>
+            <td><strong>نهاية العرض:</strong> <input type="text" id="exp_date" value="2026/03/28"></td>
+            <td><strong>المستخدم:</strong> <input type="text" id="user_name" value="سليم رشاد"></td>
+        </tr>
+    </table>
+
+    <table class="items-table" id="itemsTable">
+        <thead>
+            <tr>
+                <th class="no-print">حذف</th>
+                <th>م</th>
+                <th>رقم الصنف</th>
+                <th style="width: 35%;">اسم الصنف</th>
+                <th>الوحدة</th>
+                <th>الكمية</th>
+                <th>سعر الوحدة</th>
+                <th>الاجمالي</th>
+                <th>ملاحظات</th>
+            </tr>
+        </thead>
+        <tbody id="invoiceBody"></tbody>
+    </table>
+
+    <div class="no-print" style="margin-top: 10px;">
+        <button onclick="addRow()" style="background:#5e7995; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px;">+ إضافة صنف جديد</button>
+    </div>
+
+    <div class="totals-section">
+        <div class="total-box">
+            <div class="total-row">
+                <span>إجمالي الكميات:</span>
+                <span id="totalQty">0.00</span>
+            </div>
+            <div class="total-row" style="font-size: 18px; font-weight: bold;">
+                <span>الاجمالي النهائي:</span>
+                <span id="grandTotal">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="amount-text" id="tafqeetText">
+        فقط صفر دولار أمريكي لا غير
+    </div>
+
+    <div style="margin-top: 20px;">
+        <strong>مسئول المبيعات:</strong> <input type="text" style="width: 200px; border-bottom: 1px solid #000;">
+    </div>
+
+    <div class="footer-note">
+        * عرض السعر ساري لفترة محددة فقط ....
+    </div>
+
+    <div class="no-print" style="margin-top: 20px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #2c5e9e; color: white; border: none; border-radius: 5px;">حفظ / طباعة الفاتورة</button>
+    </div>
+
+</div>
+
+<script>
+    // --- محرك التفقيط ---
+    function tafqeet(number) {
+        if (number === 0) return "صفر";
+        const units = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
+        const tens = ["", "عشرة", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"];
+        const hundreds = ["", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"];
+        
+        let words = "";
+        let n = Math.floor(number);
+
+        if (n >= 1000) { words += "ألف "; n %= 1000; }
+        if (n >= 100) { words += hundreds[Math.floor(n/100)] + " "; n %= 100; }
+        if (n > 0) {
+            if (words !== "") words += "و ";
+            if (n < 10) words += units[n];
+            else if (n < 20) {
+                const specials = ["عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"];
+                words += specials[n-10];
+            } else {
+                words += units[n%10] + (n%10 !== 0 ? " و" : "") + tens[Math.floor(n/10)];
+            }
+        }
+        return words.trim();
+    }
+
+    // --- إدارة الصفوف ---
+    function addRow() {
+        const tbody = document.getElementById("invoiceBody");
+        const rowCount = tbody.rows.length + 1;
+        const row = `
+            <tr>
+                <td class="no-print"><button class="btn-delete" onclick="this.parentElement.parentElement.remove(); calculate();">X</button></td>
+                <td>${rowCount}</td>
+                <td><input type="text" class="cell-data"></td>
+                <td class="item-name-col"><input type="text" class="cell-data"></td>
+                <td><input type="text" class="cell-data"></td>
+                <td><input type="number" class="qty cell-data" value="1" oninput="calculate()"></td>
+                <td><input type="number" class="price cell-data" oninput="calculate()"></td>
+                <td><input type="number" class="row-total" readonly></td>
+                <td><input type="text" class="cell-data"></td>
+            </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+        calculate(); // تحديث الحسابات فور إضافة الصف
+    }
+
+    // --- العمليات الحسابية ---
+    function calculate() {
+        let rows = document.querySelectorAll("#invoiceBody tr");
+        let totalQty = 0;
+        let grandTotal = 0;
+
+        rows.forEach((row, index) => {
+            row.cells[1].innerText = index + 1;
+            let qty = parseFloat(row.querySelector(".qty").value) || 0;
+            let price = parseFloat(row.querySelector(".price").value) || 0;
+            let total = qty * price;
+            
+            row.querySelector(".row-total").value = total.toFixed(2);
+            totalQty += qty;
+            grandTotal += total;
+        });
+
+        document.getElementById("totalQty").innerText = totalQty.toFixed(2);
+        document.getElementById("grandTotal").innerText = grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
+        
+        let currency = document.getElementById("inv_currency").value;
+        document.getElementById("tafqeetText").innerText = "فقط " + tafqeet(grandTotal) + " " + currency + " لا غير";
+    }
+
+    // --- نظام قاعدة البيانات المحلية ---
+    function saveInvoice() {
+        const invNo = document.getElementById("inv_no").value;
+        if(!invNo) return alert("يرجى إدخال رقم الفاتورة");
+
+        const data = {
+            meta: {
+                no: invNo,
+                date: document.getElementById("inv_date").value,
+                curr: document.getElementById("inv_currency").value,
+                cust: document.getElementById("cust_name").value,
+                exp: document.getElementById("exp_date").value,
+                user: document.getElementById("user_name").value
+            },
+            items: []
+        };
+
+        document.querySelectorAll("#invoiceBody tr").forEach(row => {
+            let inputs = row.querySelectorAll(".cell-data");
+            data.items.push(Array.from(inputs).map(i => i.value));
+        });
+
+        localStorage.setItem("inv_" + invNo, JSON.stringify(data));
+        updateSavedList();
+        alert("تم حفظ الفاتورة بنجاح!");
+    }
+
+    function updateSavedList() {
+        const select = document.getElementById("savedInvoices");
+        select.innerHTML = '<option value="">-- فواتير محفوظة --</option>';
+        for (let i = 0; i < localStorage.length; i++){
+            let key = localStorage.key(i);
+            if(key.startsWith("inv_")) {
+                let opt = document.createElement("option");
+                opt.value = key;
+                opt.text = "فاتورة رقم: " + key.replace("inv_", "");
+                select.appendChild(opt);
+            }
+        }
+    }
+
+    function loadInvoice(key) {
+        if(!key) return;
+        const data = JSON.parse(localStorage.getItem(key));
+        
+        document.getElementById("inv_no").value = data.meta.no;
+        document.getElementById("inv_date").value = data.meta.date;
+        document.getElementById("inv_currency").value = data.meta.curr;
+        document.getElementById("cust_name").value = data.meta.cust;
+        document.getElementById("exp_date").value = data.meta.exp;
+        document.getElementById("user_name").value = data.meta.user;
+
+        const tbody = document.getElementById("invoiceBody");
+        tbody.innerHTML = "";
+        data.items.forEach(item => {
+            addRow();
+            let lastRow = tbody.lastElementChild;
+            let inputs = lastRow.querySelectorAll(".cell-data");
+            inputs.forEach((input, i) => input.value = item[i]);
+        });
+        calculate();
+    }
+
+    function deleteSavedInvoice() {
+        const key = document.getElementById("savedInvoices").value;
+        if(key && confirm("هل أنت متأكد من حذف هذه الفاتورة؟")) {
+            localStorage.removeItem(key);
+            updateSavedList();
+        }
+    }
+
+    window.onload = () => {
+        // إنشاء 5 صفوف افتراضية عند فتح الصفحة لأول مرة
+        for(let i=0; i<5; i++) addRow();
+        updateSavedList();
+    };
+</script>
+
+</body>
+</html>
